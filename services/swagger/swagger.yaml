@@ -1,0 +1,1049 @@
+openapi: 3.0.0
+info:
+  title: TM-01_MERN-API
+  description: This is an API for the MERN Stack, designed to handle actions related to Blog and User data.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000
+    description: TM-01_MERN-API
+
+tags:
+  - name: Auth/User Profile
+    description: Get User Profile
+  - name: Auth/User Data By JWT
+    description: Get User By JWT
+  - name: Auth/Login 2FA
+    description: Log in to create a JWT for authentication.
+                 - If the user is an Admin, only 1FA (email and password verification) is required.
+                 - For other users, 2FA is required
+                   1. Verify email and password to generate an OTP sent to the user's email.
+                   2. Verify the OTP along with the email to create the JWT for authentication.
+  - name: Auth/Sign up
+    description: Sign up a new user with automatic login
+                 1. Submit user data such as userEmail, userName, password, userImage(optional) to generate an OTP sent to the user's email.
+                 2. Verify the OTP along with the email to login automatically 
+  - name: Auth/Otp
+    description: verrify OTP, There are two function
+                 1. verifty after Login using OTP and useremail
+                 2. verify after signup using OTP, useremail, username, password, and userImage(optional)
+
+  - name: Auth/Google Login
+    description: Log in with OAuth2 by Google to create a JWT for authentication.
+                 1. Log in with a Google Account using the provided response URL. Once the login is complete, Google will generate an auth code for the next step.
+                 2. Use the auth code to sign up new users and create a JWT. For existing users, just create a JWT.
+  - name: Auth/Create or Update user's Profile and Data 
+    description: Create user profile and update user profile and user data
+  - name: Blog/Get All Blogs
+    description: Get All Blogs with limit and page
+  - name: Blog/Create Blog
+    description: Create a new blog post with title, content, and user information. The title is required and should be unique.
+  - name: Blog/Get a specific Blogs
+    description: Get All Blogs with limit and page  
+  - name: Blog/Delete Blog
+    description: Delete a blog post identified by its unique slug. 
+  - name: Blog/Update Blog
+    description: Update the title, content, and author of a blog post identified by its unique slug.
+
+paths:
+  /api/auth/profile/{username}:
+    get:
+      tags:
+        - Auth/User Profile
+      summary: Get a user profile by username
+      description: Fetches a user profile based on the provided username.
+      parameters:
+        - name: username
+          in: path
+          description: Profile's username
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/UserProfileandData'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "user not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "internal server error"
+           
+  /api/auth/getUser:
+    get:
+      tags:
+        - Auth/User Data By JWT
+      summary: Get User Data for Logged-in User Using Provided Token
+      description:  Fetches the data of the logged-in user based on the provided Bearer token.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'  
+        '401':
+          description: Invalid or expired token
+          content:
+           application/json:
+            schema:
+              type: object
+              properties:
+                message: 
+                  type: string
+                  example: "Invalid or expired token"     
+
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth/Login 2FA
+      summary: Step 1.Log in to create OTP.
+      description: Log in for authentication.
+                 - If the user is an Admin, only 1FA (email and password verification) is required.
+                 - For other users, 2FA is required
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userEmail:
+                  type: string
+                  example: "user@email.com"
+                password:
+                  type: string
+                  format: password
+                  example: "user1234"
+              required:
+                - userEmail
+                - password    
+      responses:
+        '200':
+          description: Successful login (Admin role)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Admin'  
+        '202':
+          description: OTP was send, Please verify OTP    
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "OTP was send, Please verify OTP "             
+        '400':
+          description: Require Email and Password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object  
+                    example: "Require Email amd Password"   
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: object
+                    example: "Invalid email or password"   
+        '500':
+          description: internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "internal server error"
+
+  /api/auth/signup:
+      post:
+        tags:
+          - Auth/Sign up
+        summary: Step 1.Submit user data to create OTP.
+        description: Submit user data such as userEmail, userName, password, userImage(optional) to generate an OTP sent to the user's email.
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userName:
+                    type: string
+                    example: "Themike"
+                  userEmail:
+                    type: string
+                    example: "user@email.com"
+                  password:
+                    type: string
+                    format: password
+                    example: "user1234"
+                  # optional
+                  userImage:
+                    type: buffer
+                    format: binary
+                    description: "Optional user image (upload image file)"
+                required:
+                  - userName   
+                  - userEmail
+                  - password 
+                  - userName   
+        responses:
+          '200':
+            description: Successful login (Admin role)
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: object
+                      example: "OTP was send to your email, Please verify OTP "              
+          '400':
+            description: Require Email, Password and Username
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: object  
+                      example: "Require Email, Password and Username"  
+          '401':
+            description: This email cannnot use
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: object  
+                      example: "Invalid email format"     
+          '405':
+            description: User Avatar cannot upload
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message: 
+                      type: object
+                      example: "User Avatar cannot upload"   
+          '409':
+            description: This email has already been used
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: object
+                      example: "This email has already been used"
+          '410':
+            description: This Username have been used
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: object
+                      example: "This Username have been used"  
+          '413':
+            description: File size exceeds the limit of 4MB!
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: object
+                      example: "File size exceeds the limit of 4MB!"  
+        '500':
+          description: internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "internal server error"
+
+  /api/auth/otp:
+    post:
+      tags:
+        - Auth/Otp
+      summary: Step 2. Verify OTP after Login or Signup to create JWT.
+      description: Verify the OTP along with the email to create the JWT for authentication.
+      requestBody:
+        description: verrify OTP, There are two function
+                      1. verifty after Login using {OTP, useremail}
+                      2. verify after signup using {OTP, useremail, username, password, userImage(optional)}
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  properties:
+                    otp:
+                      type: string
+                      example: "123456"
+                    userEmail:
+                      type: string 
+                      format: email 
+                      example: "user@email.com" 
+                  required:
+                    - otp
+                    - userEmail      
+                - type: object
+                  properties:
+                    otp:
+                      type: string
+                      example: "123456"
+                    userName:
+                      type: string
+                      example: "user"
+                    userEmail:
+                      type: string 
+                      format: email 
+                      example: "user@email.com"
+                    password:
+                      type: string
+                      format: password
+                      example: "user1234"
+                      # optional
+                    userImage:
+                      type: buffer
+                      format: binary
+                      description: "Optional user image (upload image file)"
+                  required:
+                    - otp
+                    - userName
+                    - userEmail
+                    - password  
+      responses:
+        '200':  
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User' 
+        '201':  
+          description: Signup sucessfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewUser'         
+        '401':
+          description: Invalid OTP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid OTP"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "This user have not been member yet, Please sign-up"                               
+        '500':
+          description: internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "internal server error"      
+  /api/auth/reotp:
+      post:
+        tags:
+          - Auth/Otp
+        summary: Resend OTP if Otp invalid.
+        description: Resend OTP if Otp invalid.
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userEmail:
+                    type: string  
+                    example: "user@email.com"
+                require:
+                    - userEmail
+        responses:
+          '200':  
+            description: Successful login
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: object
+                      example: "New otp was created"  
+          '500':
+            description: internal server error
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: object
+                      example: "internal server error"           
+  
+  /api/auth/googlelogin:
+    get:
+      tags: 
+        - Auth/Google Login
+      summary: step 1 Log in with a Google Account using the provided response URL.
+      description: Use the URL to log in with a Google Account. Once the login is complete, Google will generate an auth code for the next step.
+      responses: 
+        '200':
+          description: Successful create URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    example: "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&prompt=consent&response_type=code&client_id=786355565528-nfs4ue6esqeheh1d2rsv3ko98nbc3h0t.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A3500%2F2b71ec28dbfe27e1103fd9331458466b76f2dc84bf2a40b0569gjh94rf67b4e850e1f5da1"
+  /api/auth/callback:
+    post:
+      tags:
+        - Auth/Google Login
+      summary: Step 2 Retrieve the callback URL, extract the query parameter `code`, and decode it before use.
+      description: Use the auth code to sign up new users and create a JWT. For existing users, simply create a JWT.
+      requestBody:        
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  example: "4/0AanRRrsktx1GDjztWHSd8803JKsdExampleBDMo4nhdKiSBrdc_t9q5LJilDmLAy27Q"
+              required:
+                - code 
+      responses:
+        '200':  
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "Invalid code"                                               
+        '500':
+          description: internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    example: "internal server error"      
+
+  /api/auth/create-profile:
+    post:
+      tags:
+        - Auth/Create or Update user's Profile and Data 
+      summary:
+      description:
+      security:
+        - BearerAuth: []
+      requestBody:
+        require: ture
+        content:
+          application/json:
+            schema:
+             type: object
+             properties:
+              userid: 
+                type: number
+                example: 1
+              userName:
+                type: string
+                example: "Devid1234"
+              firstName:
+                type: string
+                example: "Devid"
+              lastName:
+                type: string
+                example: "stevjob"
+              birthDate:
+                type: string
+                example: "22/08/1993"
+              address:
+                type: string
+                example: "Australia Adeliade transmer"      
+              bio:
+                type: string
+                example: "love me love my cat"
+              userImage:
+                type: buffer
+                format: binary
+                description: "Optional user image (upload image file)"
+      responses:
+        '200':
+          description: Update Successfully
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/ProfileUpdate' 
+        '201':
+          description: User Data create Successfully
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/UserProfile'                  
+        '400':
+          description: Username have been used already.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Username have been used already."                  
+        '401':
+          description: You are not the owner of this profile.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "You are not the owner of this profile."          
+        '500':
+            description: internal server error
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "internal server error"
+
+
+  /api/blog/all:
+    get:
+      tags:
+        - Blog/Get All Blogs
+      summary: Get All Blogs with limit and page
+      description:  Fetch all blogs with the associated user's name, supporting pagination via query parameters `page` and `limit`.
+      parameters:
+       - name: page
+         in: query
+         description: The page number for pagination.
+         required: true
+         type: integer
+         format: int32
+       - name: limit
+         in: query
+         description: The number of blogs to retrieve per page.
+         required: true
+         type: integer
+         format: int32
+      responses:
+        '200':
+          description: A list of blogs with associated user data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      example: 4389dfd8030fd9
+                    title:
+                      type: string
+                      example: How to create blog
+                    content:
+                      type: string
+                      example: "<p>Click buttom<p>"
+                    userEmail:
+                      type: string
+                      example: user@email.com
+                    slug:
+                      type: string
+                      example: how%to%create%blog  
+                    userName:
+                      type: string
+                      example: json
+                    createdAt:
+                      type: string
+                      example: "2024-12-15T17:23:04.293Z"
+                    updatedAt:
+                      type: string
+                      example: "2024-12-15T17:23:04.293Z"       
+        '500':
+          description: Failed to fetch blogs.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to fetch blog"
+
+  /api/blog/create:
+    post:
+      tags:
+        - Blog/Create Blog
+      summary: Create a new blog post
+      description: Create a new blog post with title, content, and user information. The title is required and should be unique.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: The title of the blog post (required).
+                content:
+                  type: string
+                  description: The content of the blog post (required).
+                userEmail:
+                  type: string
+                  description: The email of the user who is creating the blog (required).
+              required:
+                - title
+                - content
+                - userEmail
+      responses:
+        '201':
+          description: Blog post created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "create blog successfully"
+                  blog:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        description: The unique identifier of the created blog.
+                      title:
+                        type: string
+                        description: The title of the blog post.
+                      content:
+                        type: string
+                        description: The content of the blog post.
+                      userEmail:
+                        type: string
+                        description: The email of the user who created the blog post.
+                      slug:
+                        type: string
+                        description: A generated slug for the blog post.
+        '400':
+          description: Bad request (missing or invalid parameters).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Title is required"
+        '500':
+          description: Conflict (duplicate title).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Internal Server Error"
+
+  /api/blog/{slug}:
+    get:
+      tags:
+        - Blog/Get a specific Blogs
+      summary: Get a specific blog post by its slug
+      description: Fetch a blog post by its unique slug. Returns the blog's details along with the associated user's name.
+      parameters:
+        - name: slug
+          in: path
+          description: The unique slug of the blog post.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved the blog post.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userEmail:
+                    type: string
+                    description: The email of the user who created the blog.
+                  title:
+                    type: string
+                    description: The title of the blog post.
+                  content:
+                    type: string
+                    description: The content of the blog post.
+                  slug:
+                    type: string
+                    description: The unique slug of the blog post.
+                  userName:
+                    type: string
+                    description: The name of the user who created the blog.
+                  createdAt:
+                    type: string
+                    format: date-time
+                    description: The timestamp when the blog was created.
+        '400':
+          description: Blog post not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Not Found Blog"
+        '500':
+          description: Failed to fetch the blog.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to fetch the blog"
+    delete:
+      tags:
+        - Blog/Delete Blog
+      summary: Delete a specific blog post by its slug
+      description: Delete a blog post identified by its unique slug.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          description: The unique slug of the blog post to be deleted.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully deleted the blog post.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Delete successfully"
+        '404':
+          description: Blog post not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Blog not found"
+        '500':
+          description: Failed to delete the blog.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to Delete the blog"
+    put:
+      tags:
+        - Blog/Update Blog
+      summary: Update a specific blog post by its slug
+      description: Update the title, content, and author of a blog post identified by its unique slug.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          description: The unique slug of the blog post to be updated.
+          required: true
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: The new title of the blog post (optional).
+                content:
+                  type: string
+                  description: The new content of the blog post (optional).
+                author:
+                  type: string
+                  description: The new author of the blog post (optional).
+              required:
+                - title
+                - content
+                - author
+      responses:
+        '200':
+          description: Successfully updated the blog post.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Update successfully"
+        '400':
+          description: Blog post not found or invalid input.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Blog not found"
+        '404':
+          description: Blog post could not be updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Cannot update"
+        '500':
+          description: Failed to update the blog post.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to update the blog"
+
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT  
+  schemas:
+    UserProfileandData:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        firstName:
+          type: string
+          example: Phantom
+        lastName:
+          type: string
+          example: assassin
+        birthDate:
+          type: string
+          format: date
+          example: "1993-04-23"
+        address:
+          type: string
+          example: Adelaide, Australia
+        bio:
+          type: string
+          example: Love me, love my cat
+        userName:
+          type: string
+          example: Ptm1234
+        userImage:
+          type: string
+          format: uri
+          example: "https://example.com/images/johndoe.jpg"
+    UserProfile:
+      type: object
+      properties:
+        message:
+          type:  string
+          example: "User Data create Successfully"
+        userid:
+          type: integer
+          example: 1
+        firstName:
+          type: string
+          example: Phantom
+        lastName:
+          type: string
+          example: assassin
+        birthDate:
+          type: string
+          format: date
+          example: "1993-04-23"
+        address:
+          type: string
+          example: Adelaide, Australia
+        bio:
+          type: string
+          example: "Love me, love my cat"  
+    UserData:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: number
+              example: 1
+            userName:
+              type: string
+              example: "JohnDoe123"
+            userEmail:
+              type: string
+              example: "john.doe@example.com"
+            role:
+              type: string
+              example: "admin"
+            userImage:
+              type: string
+              example: "https://example.com/images/johndoe.jpg"
+            iat:
+              type: number
+              example: 2334543
+            exp:
+              type: number
+              example: 123443    
+    Admin:
+      type: object
+      properties:
+        message:
+          type: string  
+          example: "Admin welcome"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NJshUksjCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6IkFkbWlubWlrZSKmsJusp1JFbWFpbCI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwidXNlckltYWdlIjoiaHR0cHM6Ly9zdG9yYWdlLmdvb2dsZWFwaXMuY29tL21lYXJuLWFwcC0wMS8xNzM0MzUzOTQwODAwU19fNDQ0ODY5MC5qcGciLCJpYXQiOjE3MzQ2MTc1MDYsImV4cCI6MTczNDYyMTEwNn0.ONC38HUB9vk5vuC0gkd-d4M27nTfApSItVaOAmn8QKI"
+        role:
+          type: string
+          example: "Admin"              
+    User:
+      type: object
+      properties:
+        message:
+          type: string  
+          example: "Login sucessfully"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NJshUksjCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6IkFkbWlubWlrZSKmsJusp1JFbWFpbCI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwidXNlckltYWdlIjoiaHR0cHM6Ly9zdG9yYWdlLmdvb2dsZWFwaXMuY29tL21lYXJuLWFwcC0wMS8xNzM0MzUzOTQwODAwU19fNDQ0ODY5MC5qcGciLCJpYXQiOjE3MzQ2MTc1MDYsImV4cCI6MTczNDYyMTEwNn0.ONC38HUB9vk5vuC0gkd-d4M27nTfApSItVaOAmn8QKI"
+    NewUser:
+      type: object
+      properties:
+        message:
+          type: string  
+          example: "Signup sucessfully"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NJshUksjCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6IkFkbWlubWlrZSKmsJusp1JFbWFpbCI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwidXNlckltYWdlIjoiaHR0cHM6Ly9zdG9yYWdlLmdvb2dsZWFwaXMuY29tL21lYXJuLWFwcC0wMS8xNzM0MzUzOTQwODAwU19fNDQ0ODY5MC5qcGciLCJpYXQiOjE3MzQ2MTc1MDYsImV4cCI6MTczNDYyMTEwNn0.ONC38HUB9vk5vuC0gkd-d4M27nTfApSItVaOAmn8QKI"
+    ProfileUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: Phantom
+        lastName:
+          type: string
+          example: assassin
+        birthDate:
+          type: string
+          format: date
+          example: "1993-04-23"
+        address:
+          type: string
+          example: Adelaide, Australia
+        bio:
+          type: string
+          example: "Love me, love my cat"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NJshUksjCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6IkFkbWlubWlrZSKmsJusp1JFbWFpbCI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwidXNlckltYWdlIjoiaHR0cHM6Ly9zdG9yYWdlLmdvb2dsZWFwaXMuY29tL21lYXJuLWFwcC0wMS8xNzM0MzUzOTQwODAwU19fNDQ0ODY5MC5qcGciLCJpYXQiOjE3MzQ2MTc1MDYsImV4cCI6MTczNDYyMTEwNn0.ONC38HUB9vk5vuC0gkd-d4M27nTfApSItVaOAmn8QKI"  
