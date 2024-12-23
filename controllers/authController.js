@@ -433,6 +433,7 @@ exports.getAllUser = async (req,res) =>{
     const db = await connectDatabase();
     try{
         const [fetchData] = await db.execute('SELECT email, userName FROM users')
+        console.log(fetchData)
         return fetchData;
     }catch(error){
         throw new error("Server Error");

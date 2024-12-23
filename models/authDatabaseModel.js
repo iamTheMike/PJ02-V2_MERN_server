@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 const dotenv = require ('dotenv');
 const crypto = require('crypto');
-const { response } = require('express');
+
 
 dotenv.config();
 
@@ -11,7 +11,8 @@ const connectDatabase = async () =>{
         host: process.env.HOST_MYSQL,
         port: process.env.POST_MYSQL,
         user: process.env.USER_MYSQL ,
-        password: process.env.PASSSWORD_MYSQL
+        password: process.env.PASSSWORD_MYSQL,
+        database: "MERN"
        });
         return db;
     } catch (err) {
