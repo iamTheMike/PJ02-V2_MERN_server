@@ -3,6 +3,7 @@ const {blogModel} = require('../models/blogDatabaseModel');
 const {v4:uuidv4}= require('uuid');
 const { getAllUser, getUsernameByEmail } = require('./authController');
 
+
 exports.create= async (req,res)=>{
     const {title,content,userEmail} = req.body
     let slug = slugify(title);//for thai language
@@ -24,16 +25,16 @@ exports.create= async (req,res)=>{
 exports.getAllblogs= async (req,res)=>{
 
    try{
-     const {page, limit } = req.query;
-     const userData = await getAllUser() ;
-     const blogData = await blogModel.find().skip((page-1)*limit).limit(limit);
-     const userBlog = blogData.map(blog=>{
+      const {page, limit } = req.query;
+      const userData = await getAllUser() ;
+      const blogData = await blogModel.find().skip((page-1)*limit).limit(limit);
+      const userBlog = blogData.map(blog=>{
        const user = userData.find(user=>  blog.userEmail===user.email)
        const newBlog =  {...blog._doc,userName:(user?(user.userName):null)}
        return{
         ...newBlog  
        }
-     })
+      })
      return res.status(200).json(userBlog);
    }catch(error){
      return res.status(500).json({message:"Failed to fetch blog"});
