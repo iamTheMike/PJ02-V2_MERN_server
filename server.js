@@ -9,22 +9,14 @@ const {initializeBlogDatabase} = require('./models/blogDatabaseModel')
 const {initializeAuthDatabase} = require('./models/authDatabaseModel');
 const { swaggerDocument, swaggerUi } = require('./services/swagger/swagger');
 
-
 const app = express();
 
-//seting config tools
 dotenv.config();
 
-const corsOptions = {
-  origin: '*', // โดเมนที่อนุญาต
-  methods: ['GET,HEAD,PUT,PATCH,POST,DELETE'], // วิธี HTTP ที่อนุญาต
-  credentials: true, // อนุญาตการส่ง cookies หรือ authorization headers
-};
-//middleware
 app.use(express.urlencoded({ extended: false}));
 app.use(express.json());
-app.use(cors(corsOptions));
-app.use(morgan("dev")); // display log "dev" mode
+app.use(cors());
+app.use(morgan("dev"));
 
 app.use('/api/blog',blogRoute);
 app.use('/api/auth',authRoute);

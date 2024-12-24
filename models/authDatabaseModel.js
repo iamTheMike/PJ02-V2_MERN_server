@@ -12,7 +12,7 @@ const connectDatabase = async () =>{
         port: process.env.POST_MYSQL,
         user: process.env.USER_MYSQL ,
         password: process.env.PASSSWORD_MYSQL,
-        database: "MERN"
+        database: "PJ02"
        });
         return db;
     } catch (err) {
@@ -24,9 +24,7 @@ const connectDatabase = async () =>{
 
 const initializeAuthDatabase = async () => {
     try{
-        const db = await connectDatabase();
-       await db.execute(`CREATE DATABASE IF NOT EXISTS MERN`);
-       await db.changeUser( {database: "MERN"});
+       const db = await connectDatabase();
        
        //create initalizeTable
        const usersTable = 
@@ -67,10 +65,6 @@ const initializeAuthDatabase = async () => {
        await db.execute(initializeAdmin,['admin',hashPassword,salt,'Administrator','admin','local']);
     
        console.log('The auth database was successfully created or already existed.');
-
-       
-      
-       
     }catch(err){
         console.log(err);
     }

@@ -1,0 +1,71 @@
+services: 
+    express:
+      build:
+        context: .
+      container_name: PJ02-express
+      ports:
+        - "5000:5000"
+      networks:
+        - PJ02   
+      depends_on:
+        - db
+        - mongodb
+        - redis         
+    db:
+      image: mysql:latest
+      container_name: PJ02-mysql
+      environment:
+        MYSQL_ROOT_PASSWORD: password
+        MYSQL_DATABASE: PJ02
+      volumes:
+        - "PJ02-MYSQL:/var/lib/mysql"  
+      ports:
+        - "3307:3306"
+      networks:
+        - PJ02  
+
+    phpmyadmin:
+      image: phpmyadmin:latest
+      container_name: PJ02-phpmyadmin
+      environment:
+        PMA_HOST: db
+        PMA_PORT: 3306
+        PMA_USER: root
+        PMA_PASSWORD: password
+      ports:
+        - '8080:80'  
+      depends_on: 
+        - db  
+      networks:
+        - PJ02    
+    redis:
+      image: redis:latest
+      container_name: PJ02-redis
+      ports:
+        - '6379:6379'
+      networks:
+        - PJ02  
+    mongodb:
+      image: mongo:latest
+      container_name: PJ02-mongo
+      command: mongod --quiet --logpath /dev/null
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: admin
+        MONGO_INITDB_ROOT_PASSWORD: password
+        MONGO_INITDB_DATABASE: PJ02
+      ports:
+        - "27020:27017"
+      volumes:
+        - PJ02-MONGO:/data/db
+      networks:
+        - PJ02
+  
+networks:
+  PJ02:
+    driver: bridge
+volumes:
+  PJ02-MYSQL:
+    driver: local
+  PJ02-MONGO:
+    driver: local
+    

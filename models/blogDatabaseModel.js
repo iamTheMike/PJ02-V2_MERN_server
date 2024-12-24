@@ -30,7 +30,7 @@ const blogSchema = mongoose.Schema({
 const blogModel =  mongoose.model("Blogs",blogSchema);
 
 const initializeBlogDatabase = async() =>{
-    await mongoose.connect(process.env.DATABASE_MONGODB,{
+    await mongoose.connect(process.env.DATABASE_MONGODB ,{
     }).then(()=>{
         console.log("The blog database was successfully created or already existed.")
     }).catch((err)=>{
