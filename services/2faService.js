@@ -23,7 +23,7 @@ const generateOTP =  (email) => {
         })
         return OTP;
     }catch(error){
-        throw new Error('generateOTP 2fa error');
+        console.log('generateOTP 2fa error',error);
     }    
 }
 
@@ -38,7 +38,7 @@ const verifyOTP = (email,otp) => {
         })
         return isvalid;
     }catch(error){
-        throw new Error('verifyOTP 2fa error');
+        console.log('verifyOTP 2fa error',error);
     }
 }
 
@@ -59,7 +59,7 @@ const sendOTPviaEmail = async (email,otp)=>{
     try{
          await emailService.sendMail(emailOTP) 
     }catch(error){
-        throw new Error('Send OTP Error');
+        console.log('Send OTP Error',error);
     }
 }
 

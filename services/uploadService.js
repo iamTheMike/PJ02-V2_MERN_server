@@ -25,9 +25,9 @@ const handleMulterError = (err, res, next) => {
 };
 
 const upload = multer({
-    storage: multer.memoryStorage(), //store file in memory as Buffer object
+    storage: multer.memoryStorage(), 
     limits:{
-        fileSize: 4 * 1024 * 1024 //limit 4 mb
+        fileSize: 4 * 1024 * 1024 
     },
 })
 

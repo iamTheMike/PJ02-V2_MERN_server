@@ -6,7 +6,7 @@ const { expressjwt: jwt } = require('express-jwt');
 
 const initialzeSecret = async (req, res) => {
   try {
-    const secret = crypto.randomBytes(64).toString('hex'); 
+    const secret = crypto.randomBytes(64).toString('hex');
     let envContent = '';
     if (fs.existsSync('.env')) {
       envContent = fs.readFileSync('.env', 'utf8');
@@ -16,7 +16,7 @@ const initialzeSecret = async (req, res) => {
     lines = lines.map(line => {
       if (line.startsWith('SECRET=')) {
         foundSecret = true;
-        return `SECRET=${secret}`; 
+        return `SECRET=${secret}`;
       }
       return line;
     });
@@ -27,40 +27,48 @@ const initialzeSecret = async (req, res) => {
     envContent = lines.join('\n');
     fs.writeFileSync('.env', envContent, 'utf8');
   } catch (error) {
-    throw new Error('generate secret error');
+    console.log('generate secret error', error);
   }
 };
 
 
-const creatToken = async (user) =>{
-  const payload = {
-    id : user.id,
-    userName : user.userName,
-    userEmail: user.email,
-    role: user.role,
-    userImage: user.userImage
-  };
-  const token = jsonwebtoken.sign(payload,process.env.SECRET,{
-    expiresIn:'1h'
-  })
-  return token;
+const creatToken = async (user) => {
+  try {
+    if (!user) {
+      return null;
+    }
+    const payload = {
+      id: user.id,
+      userName: user.userName,
+      userEmail: user.email,
+      role: user.role,
+      userImage: user.userImage
+    };
+    const token = jsonwebtoken.sign(payload, process.env.SECRET, {
+      expiresIn: '1h'
+    })
+    return token;
+  } catch (error) {
+    console.log('Cannot create token', error);
+  }
 }
 
 
-const secretWork = async (req,res) =>{  
+const secretWork = async (req, res) => {
   cron.schedule('0 0 * * *', () => {
     initialzeSecret();
-  console.log('SECRET regenerated at midnight.'); //UTC Zone
- },{
-    timezone: "Asia/Bangkok" 
-})
+    console.log('SECRET regenerated at midnight.'); //UTC Zone
+  }, {
+    timezone: "Asia/Bangkok"
+  })
 }
 
 const verifyToken = jwt({
   secret: process.env.SECRET,
-  algorithms: ["HS256"], 
-  userProperty: "auth", 
+  algorithms: ["HS256"],
+  userProperty: "auth",
 });
+
 
 const handleTokenError = (err, res, next) => {
   if (err) {
@@ -68,7 +76,7 @@ const handleTokenError = (err, res, next) => {
       return res.status(401).json({ message: 'Please Login' });
     }
   }
-  next(); 
+  next();
 };
 
-module.exports = {secretWork,initialzeSecret,creatToken,verifyToken,handleTokenError};
+module.exports = { secretWork, initialzeSecret, creatToken, verifyToken, handleTokenError };

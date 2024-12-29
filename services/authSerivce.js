@@ -31,8 +31,8 @@ const getUserGoogle = async (code,req,res) => {
     const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${acess.access_token}`);
     const googleData = await userInfoResponse.json();
     return googleData;
-  }catch(err){
-    throw new Error('Cannot get user Data');
+  }catch(error){
+    console.log('Cannot get user Data',error);
   }
   
 }

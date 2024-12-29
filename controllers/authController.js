@@ -6,11 +6,12 @@ const { creatToken } = require('../services/tokenService');
 const { getUserGoogle, generateGoogleUrl } = require('../services/authSerivce');
 const { fileFilter } = require('../services/uploadService');
 const uploadImage = require('../services/cloudService');
-const { token } = require('morgan');
+
 
 
 exports.login = async(req,res) =>{
     const {userEmail,password} = req.body;
+
     const db = await connectDatabase();
     if (!userEmail || !password) {
         return res.status(400).json({ message: 'Require Email and password' });

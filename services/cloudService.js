@@ -29,7 +29,7 @@ const uploadImage = async (file) => {
             blobStream.end(buffer);
         });
     } catch (error) {
-        throw new Error('Cannot Upload Image');; 
+        console.log('Cannot Upload Image',error);; 
     }
 };
 
