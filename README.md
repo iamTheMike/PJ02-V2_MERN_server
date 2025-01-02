@@ -2,7 +2,7 @@
 
 ## Description
 This API is an edited version of PJ01-MERN-Server, 
-modified to use local databases such as MySQL, MongoDB, Redis, and to add Docker support. 
+modified to use local databases such as MySQL, MongoDB,  and  Docker support. 
 It is a RESTful API built with Node.js, Express, and other essential libraries. The API provides a blogging platform with user authentication features and integrates Swagger for auto-generated documentation.
 
 
@@ -18,7 +18,6 @@ It is a RESTful API built with Node.js, Express, and other essential libraries. 
  * MongoDB  : Mongoose schemas is used for modeling  Blog data
  * Mysql : mysql2 is used for modeling user data
  * Google Cloud : Used for handling user image files.
- * Redis : Caching system
  * Docker:  Provides containerized environments
  
 ### Database Seed
